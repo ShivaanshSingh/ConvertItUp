@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ConvertFlow — Minimalist Universal File & Media Converter</title>
+  <meta name="description" content="Effortless document, image, audio, and YouTube conversions. Minimalist, private, lightning-fast file transformation engine." />
+  
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Client-Side Document & Media Engines -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+</head>
+<body>
+
+  <!-- ================= HEADER & NAV ================= -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="#top" class="logo" aria-label="ConvertFlow Home">
+        <span class="logo-mark"></span>
+        <span class="logo-text">ConvertFlow</span>
+      </a>
+
+      <nav class="nav-links" id="main-nav" aria-label="Primary Navigation">
+        <a href="#converter" class="nav-link">Studio</a>
+        <a href="#services" class="nav-link">Services</a>
+        <a href="#value" class="nav-link">About</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="header-actions">
+        <!-- Auth Button (Logged Out State) -->
+        <button class="btn btn-outline-sm" id="openAuthModalBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Account</span>
+        </button>
+
+        <!-- User Profile Dropdown (Logged In State) -->
+        <div class="user-profile-menu" id="userProfileMenu" style="display: none;">
+          <div class="user-chip" id="userChipBtn">
+            <span class="user-avatar" id="userAvatarText">U</span>
+            <span class="user-email-text" id="userEmailText">user@example.com</span>
+            <span class="user-credits-badge" id="userCreditsBadge">10 Credits</span>
+          </div>
+          <button class="btn btn-logout-sm" id="logoutBtn" title="Sign Out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Menu" aria-expanded="false">
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= AUTH MODAL (CREATE ACCOUNT / SIGN IN) ================= -->
+  <div class="modal-overlay" id="authModalOverlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-tabs">
+          <button class="modal-tab active" id="tabSignUpBtn">Create Account</button>
+          <button class="modal-tab" id="tabSignInBtn">Sign In</button>
+        </div>
+        <button class="modal-close-btn" id="closeAuthModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Error / Info Alert -->
+        <div class="auth-alert" id="authAlert" style="display: none;"></div>
+
+        <!-- Google OAuth Quick Button -->
+        <button class="btn btn-google" id="googleSignInBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span id="googleBtnLabel">Continue with Google</span>
+        </button>
+
+        <div class="modal-divider">
+          <span>or with email</span>
+        </div>
+
+        <!-- Auth Form (with Custom Aesthetic Validation) -->
+        <form id="authForm" novalidate>
+          <div class="form-group" id="nameFieldGroup">
+            <label for="authDisplayName">Full Name</label>
+            <input type="text" id="authDisplayName" class="form-input" autocomplete="name" />
+            <span class="field-error-msg" id="nameErrorMsg"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="authEmail">Email Address</label>
+            <input type="email" id="authEmail" class="form-input" autocomplete="email" />
+            <span class="field-error-msg" id="emailErrorMsg"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="authPassword">Password</label>
+            <input type="password" id="authPassword" class="form-input" autocomplete="current-password" />
+            <span class="field-error-msg" id="passwordErrorMsg"></span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn" style="margin-top: 1rem;">
+            <span id="authSubmitBtnText">Create Free Account</span>
+          </button>
+        </form>
+
+        <p class="auth-footnote" id="authFootnoteText">
+          By signing up, you get <strong>10 free conversion credits</strong> instantly stored on your Firebase profile.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HERO SECTION ================= -->
+  <section class="hero-section">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="pill-badge">
+          <span class="pill-dot"></span>
+          <span>Next-Gen File & Audio Engine</span>
+        </div>
+        <h1 class="hero-title">
+          Universal conversion, <br />
+          <span>zero clutter.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Transform PDFs to DOCX, convert images to WebP, transcode lossless audio, or extract pure MP3s from YouTube URLs in seconds. Private, fast, and engineered for precision.
+        </p>
+        <div class="hero-cta-group">
+          <a href="#converter" class="btn btn-primary">Start Converting Free</a>
+          <a href="#services" class="btn btn-secondary">Explore Capabilities</a>
+        </div>
+        
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-value">50+</span>
+            <span class="stat-label">File Formats</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-value">&lt; 1.2s</span>
+            <span class="stat-label">Avg Processing</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-value">100%</span>
+            <span class="stat-label">Data Discard Policy</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE INTERACTIVE CONVERTER STUDIO -->
+      <div class="hero-widget-wrap" id="converter">
+        <div class="studio-card">
+          <div class="studio-header">
+            <div class="studio-tabs" role="tablist">
+              <button class="tab-btn active" data-tab="documents" role="tab" aria-selected="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                PDF / Docs
+              </button>
+              <button class="tab-btn" data-tab="images" role="tab" aria-selected="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Images
+              </button>
+              <button class="tab-btn" data-tab="audio" role="tab" aria-selected="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                Audio
+              </button>
+              <button class="tab-btn" data-tab="youtube" role="tab" aria-selected="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+                YouTube
+              </button>
+            </div>
+          </div>
+
+          <div class="studio-body">
+            <!-- TAB 1: DOCUMENTS -->
+            <div class="tab-pane active" id="pane-documents">
+              <div class="dropzone" id="docDropzone">
+                <input type="file" id="docFileInput" accept=".pdf,.doc,.docx,.txt" class="file-input-hidden" />
+                <div class="dropzone-inner">
+                  <div class="upload-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  </div>
+                  <p class="dropzone-text"><strong>Drag & Drop PDF or Document</strong></p>
+                  <p class="dropzone-sub">or click to browse from device (Up to 100MB)</p>
+                </div>
+              </div>
+              <div class="format-controls">
+                <div class="control-col">
+                  <label for="docTargetSelect">Convert to</label>
+                  <select id="docTargetSelect" class="form-select">
+                    <option value="docx">DOCX (Microsoft Word)</option>
+                    <option value="pdf">PDF (Document Format)</option>
+                    <option value="txt">TXT (Plain Text)</option>
+                    <option value="epub">EPUB (E-Book)</option>
+                  </select>
+                </div>
+                <div class="control-col">
+                  <label for="docOcrToggle">OCR Recognition</label>
+                  <select id="docOcrToggle" class="form-select">
+                    <option value="auto">Auto Detect</option>
+                    <option value="enabled">Force OCR (Scanned)</option>
+                    <option value="disabled">Standard Parse</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: IMAGES -->
+            <div class="tab-pane" id="pane-images">
+              <div class="dropzone" id="imgDropzone">
+                <input type="file" id="imgFileInput" accept=".jpg,.jpeg,.png,.webp,.svg,.avif" class="file-input-hidden" />
+                <div class="dropzone-inner">
+                  <div class="upload-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  </div>
+                  <p class="dropzone-text"><strong>Drop JPG, PNG, WEBP, or SVG</strong></p>
+                  <p class="dropzone-sub">Batch optimization & lossy/lossless conversion</p>
+                </div>
+              </div>
+              <div class="format-controls">
+                <div class="control-col">
+                  <label for="imgTargetSelect">Target Format</label>
+                  <select id="imgTargetSelect" class="form-select">
+                    <option value="png">PNG (Lossless Alpha)</option>
+                    <option value="webp">WEBP (Web Optimized)</option>
+                    <option value="jpg">JPG (High Compression)</option>
+                    <option value="avif">AVIF (Next-Gen)</option>
+                  </select>
+                </div>
+                <div class="control-col">
+                  <label for="imgQualityRange">Quality: <span id="imgQualityLabel">90%</span></label>
+                  <input type="range" id="imgQualityRange" min="50" max="100" value="90" class="range-slider" />
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 3: AUDIO -->
+            <div class="tab-pane" id="pane-audio">
+              <div class="dropzone" id="audioDropzone">
+                <input type="file" id="audioFileInput" accept=".wav,.mp3,.aac,.flac,.ogg,.m4a" class="file-input-hidden" />
+                <div class="dropzone-inner">
+                  <div class="upload-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  </div>
+                  <p class="dropzone-text"><strong>Drop WAV, MP3, or FLAC File</strong></p>
+                  <p class="dropzone-sub">FFmpeg studio audio processing pipeline</p>
+                </div>
+              </div>
+              <div class="format-controls">
+                <div class="control-col">
+                  <label for="audioTargetSelect">Output Codec</label>
+                  <select id="audioTargetSelect" class="form-select">
+                    <option value="mp3">MP3 (Universal)</option>
+                    <option value="wav">WAV (PCM Uncompressed)</option>
+                    <option value="aac">AAC (Modern Audio)</option>
+                    <option value="flac">FLAC (Lossless)</option>
+                  </select>
+                </div>
+                <div class="control-col">
+                  <label for="audioBitrateSelect">Bitrate</label>
+                  <select id="audioBitrateSelect" class="form-select">
+                    <option value="320k">320 kbps (High Fidelity)</option>
+                    <option value="256k">256 kbps (Standard)</option>
+                    <option value="192k">192 kbps (Compact)</option>
+                    <option value="128k">128 kbps (Voice/Speech)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 4: YOUTUBE -->
+            <div class="tab-pane" id="pane-youtube">
+              <div class="yt-input-container">
+                <label for="ytUrlInput" class="yt-label">YouTube Video or Shorts URL</label>
+                <div class="yt-input-wrapper">
+                  <span class="yt-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 20c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 4c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
+                  </span>
+                  <input type="url" id="ytUrlInput" class="form-input yt-input" />
+                </div>
+              </div>
+              <div class="format-controls">
+                <div class="control-col">
+                  <label for="ytFormatSelect">Extract Format</label>
+                  <select id="ytFormatSelect" class="form-select">
+                    <option value="mp3">MP3 Audio (320 kbps)</option>
+                    <option value="wav">WAV Audio (Lossless Stream)</option>
+                    <option value="m4a">M4A (Apple Audio)</option>
+                  </select>
+                </div>
+                <div class="control-col">
+                  <label for="ytTaggingToggle">Metadata & Artwork</label>
+                  <select id="ytTaggingToggle" class="form-select">
+                    <option value="embed">Embed Title & Thumbnail</option>
+                    <option value="raw">Raw Stream Only</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- SELECTED FILE DISPLAY -->
+            <div class="selected-file-card" id="selectedFileCard" style="display: none;">
+              <div class="file-icon-box" id="fileIconBox">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+              </div>
+              <div class="file-meta">
+                <p class="file-name" id="selectedFileName">sample-document.pdf</p>
+                <p class="file-size" id="selectedFileSize">2.4 MB</p>
+              </div>
+              <button class="remove-file-btn" id="removeFileBtn" aria-label="Remove file">&times;</button>
+            </div>
+
+            <!-- CONVERSION PROGRESS BAR (DYNAMIC) -->
+            <div class="progress-container" id="progressContainer" style="display: none;">
+              <div class="progress-status-row">
+                <span class="progress-status-text" id="progressStatusText">Transcoding file...</span>
+                <span class="progress-percent" id="progressPercent">64%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-bar" id="progressBar" style="width: 64%;"></div>
+              </div>
+            </div>
+
+            <!-- RESULT ACTION BAR -->
+            <div class="result-action-card" id="resultCard" style="display: none;">
+              <div class="result-info">
+                <span class="result-badge">Ready for Download</span>
+                <p class="result-name" id="resultFileName">converted-output.docx</p>
+              </div>
+              <a href="#" class="btn btn-download" id="downloadResultBtn" download>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download File
+              </a>
+            </div>
+
+            <!-- PRIMARY ACTION TRIGGER -->
+            <div class="studio-footer">
+              <button class="btn btn-convert-full" id="startConvertBtn">
+                <span id="convertBtnText">Convert Now</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT / VALUE PROPOSITION ================= -->
+  <section class="section value-section" id="value">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Value Proposition</span>
+        <h2 class="section-title">Engineered with purpose, stripped of bloat.</h2>
+        <p class="section-description">
+          Traditional converter tools are plagued with ads, invasive trackers, and slow queues. ConvertFlow is built on clean serverless infrastructure designed for speed and uncompromising privacy.
+        </p>
+      </div>
+
+      <div class="value-grid">
+        <div class="value-card">
+          <div class="value-number">01</div>
+          <h3 class="value-title">Zero-Persistence Privacy</h3>
+          <p class="value-text">
+            Your files are processed in isolated transient memory and permanently deleted from our encrypted storage buckets within 24 hours. No data hoarding.
+          </p>
+        </div>
+
+        <div class="value-card">
+          <div class="value-number">02</div>
+          <h3 class="value-title">Lossless Transcoding</h3>
+          <p class="value-text">
+            Powered by modern FFmpeg and LibreOffice compilation stacks, preserving typography hierarchy, vector shapes, and 320kbps audio harmonics.
+          </p>
+        </div>
+
+        <div class="value-card">
+          <div class="value-number">03</div>
+          <h3 class="value-title">Direct Cloud Streams</h3>
+          <p class="value-text">
+            Extract pure audio streams from YouTube or video sources directly through memory pipelines without storing heavy video files on your client.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SERVICES SHOWCASE GRID ================= -->
+  <section class="section services-section" id="services">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Conversion Capabilities</span>
+        <h2 class="section-title">Everything you need, in a single workstation.</h2>
+        <p class="section-description">
+          From complex paginated legal contracts to raw audio masters and web media, select the technique that fits your workflow.
+        </p>
+      </div>
+
+      <div class="services-grid">
+        <!-- Service Card 1 -->
+        <div class="service-card">
+          <div class="service-icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3 class="service-title">PDF & Document Suite</h3>
+          <p class="service-text">Convert PDFs into fully editable Word DOCX documents with tabular data preservation, OCR text extraction, and TXT parsing.</p>
+          <ul class="service-specs">
+            <li>PDF &rarr; DOCX / RTF</li>
+            <li>DOCX &rarr; Clean PDF</li>
+            <li>OCR Scanned Document Extraction</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 2 -->
+        <div class="service-card">
+          <div class="service-icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <h3 class="service-title">Image Optimization & Formats</h3>
+          <p class="service-text">Transform heavy JPGs to next-generation WebP or AVIF formats. Compress assets for blazing-fast web delivery without visual loss.</p>
+          <ul class="service-specs">
+            <li>JPG / PNG &rarr; WebP / AVIF</li>
+            <li>Lossless Transparency Preservation</li>
+            <li>Custom Scale & Quality Tuning</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 3 -->
+        <div class="service-card">
+          <div class="service-icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <h3 class="service-title">High-Fidelity Audio Transcoding</h3>
+          <p class="service-text">Convert uncompressed WAV and AIFF files into high-bitrate MP3, AAC, FLAC, or OGG with custom sample rate and channel controls.</p>
+          <ul class="service-specs">
+            <li>WAV &rarr; 320kbps MP3</li>
+            <li>FLAC &rarr; Universal AAC</li>
+            <li>ID3 Metadata & Artwork Tagging</li>
+          </ul>
+        </div>
+
+        <!-- Service Card 4 -->
+        <div class="service-card highlight-card">
+          <div class="service-icon-wrap highlight-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+          </div>
+          <h3 class="service-title">YouTube to MP3 / WAV Streamer</h3>
+          <p class="service-text">Simply paste any public YouTube link. Our worker isolates the pure audio stream, normalizes peaks, and generates a studio MP3 or WAV.</p>
+          <ul class="service-specs">
+            <li>Zero local bandwidth overhead</li>
+            <li>Automatic Cover Art & Title Tagging</li>
+            <li>Custom Timestamp Trimming</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRICING SECTION ================= -->
+  <section class="section pricing-section" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Straightforward Pricing</span>
+        <h2 class="section-title">Transparent plans for creators and teams.</h2>
+        <p class="section-description">
+          Start for free with daily credits. Upgrade when you need higher file sizes, batch concurrency, and API access.
+        </p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Free Plan -->
+        <div class="pricing-card">
+          <div class="pricing-badge">Starter</div>
+          <h3 class="pricing-tier">Free</h3>
+          <div class="pricing-price">
+            <span class="currency">$</span>0<span class="period">/ month</span>
+          </div>
+          <p class="pricing-desc">Perfect for quick one-off document and media conversions.</p>
+          
+          <ul class="pricing-features">
+            <li>10 free conversions / month</li>
+            <li>25 MB max file size limit</li>
+            <li>Standard queue processing</li>
+            <li>1-hour file storage window</li>
+            <li>YouTube extraction up to 10 mins</li>
+          </ul>
+          
+          <a href="#converter" class="btn btn-outline-card">Current Plan</a>
+        </div>
+
+        <!-- Pro Plan (Featured) -->
+        <div class="pricing-card featured-pricing">
+          <div class="pricing-badge-popular">Most Popular</div>
+          <h3 class="pricing-tier">Pro Creator</h3>
+          <div class="pricing-price">
+            <span class="currency">$</span>9.99<span class="period">/ month</span>
+          </div>
+          <p class="pricing-desc">Designed for power users, designers, and audio creators.</p>
+          
+          <ul class="pricing-features">
+            <li><strong>250 credits</strong> / month</li>
+            <li><strong>500 MB</strong> max file size</li>
+            <li>High-priority Cloud Run workers</li>
+            <li>Batch conversion (5 parallel files)</li>
+            <li>YouTube extraction up to 120 mins</li>
+            <li>Full OCR for scanned PDFs</li>
+          </ul>
+          
+          <a href="#contact" class="btn btn-primary btn-block">Upgrade to Pro</a>
+        </div>
+
+        <!-- Enterprise Plan -->
+        <div class="pricing-card">
+          <div class="pricing-badge">Business</div>
+          <h3 class="pricing-tier">Enterprise</h3>
+          <div class="pricing-price">
+            <span class="currency">$</span>29.99<span class="period">/ month</span>
+          </div>
+          <p class="pricing-desc">For high-throughput pipelines, studios, and agencies.</p>
+          
+          <ul class="pricing-features">
+            <li><strong>1,500 credits</strong> / month + Top-ups</li>
+            <li><strong>2 GB</strong> max file size limit</li>
+            <li>Dedicated API Key & Webhooks</li>
+            <li>20 concurrent job threads</li>
+            <li>Custom 7-day storage retention</li>
+            <li>Dedicated SLA & support</li>
+          </ul>
+          
+          <a href="#contact" class="btn btn-outline-card">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CONTACT FORM SECTION ================= -->
+  <section class="section contact-section" id="contact">
+    <div class="container contact-container">
+      <div class="contact-header">
+        <span class="section-tag">Direct Inquiries</span>
+        <h2 class="section-title">Get in touch or request a feature.</h2>
+        <p class="section-description">
+          Have an enterprise format question, partnership inquiry, or technical requirement? Send a message directly to our engineering team.
+        </p>
+      </div>
+
+      <div class="contact-card">
+        <form id="contactForm" class="contact-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="contactName">Full Name</label>
+              <input type="text" id="contactName" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label for="contactEmail">Email Address</label>
+              <input type="email" id="contactEmail" class="form-input" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="contactSubject">Inquiry Type</label>
+            <select id="contactSubject" class="form-select">
+              <option value="enterprise">Enterprise Plan & API Access</option>
+              <option value="format_request">Custom Format or Codec Request</option>
+              <option value="support">Billing or Technical Support</option>
+              <option value="feedback">General Feedback</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="contactMessage">Your Message</label>
+            <textarea id="contactMessage" rows="4" class="form-textarea" required></textarea>
+          </div>
+
+          <div class="contact-form-footer">
+            <button type="submit" class="btn btn-primary" id="contactSubmitBtn">
+              <span>Send Message</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+            <p class="form-status-msg" id="contactStatusMsg" style="display: none;"></p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="#top" class="logo">
+          <span class="logo-mark"></span>
+          <span class="logo-text">ConvertFlow</span>
+        </a>
+        <p class="footer-tagline">Minimalist, privacy-first universal file conversion platform.</p>
+      </div>
+
+      <div class="footer-links-grid">
+        <div class="footer-col">
+          <h4 class="footer-heading">Tools</h4>
+          <a href="#converter">PDF to DOCX</a>
+          <a href="#converter">JPG to PNG</a>
+          <a href="#converter">WAV to MP3</a>
+          <a href="#converter">YouTube to MP3</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-heading">Platform</h4>
+          <a href="#value">Security & Privacy</a>
+          <a href="#pricing">Pricing Plans</a>
+          <a href="#services">API Documentation</a>
+          <a href="#contact">Status</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-heading">Legal & Connect</h4>
+          <a href="#contact">Terms of Service</a>
+          <a href="#contact">Privacy Policy</a>
+          <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://twitter.com" target="_blank" rel="noopener">X / Twitter</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <p>&copy; 2026 ConvertFlow Technologies Inc. All rights reserved.</p>
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span>All Conversion Engines Operational</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript Logic as ES Module -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

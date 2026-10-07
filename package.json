@@ -1,0 +1,24 @@
+{
+  "name": "convertflow-app",
+  "version": "1.0.0",
+  "description": "ConvertFlow - Minimalist Universal File & Media Converter SaaS",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "serve": "npx -y serve . -p 3000"
+  },
+  "keywords": [
+    "file-converter",
+    "pdf-to-docx",
+    "audio-transcoder",
+    "youtube-to-mp3",
+    "saas"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "firebase": "^12.19.0"
+  }
+}
