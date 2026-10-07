@@ -890,7 +890,21 @@ document.addEventListener('DOMContentLoaded', () => {
           const errData = await response.json().catch(() => ({}));
           throw new Error(errData.error || `Server responded with status ${response.status}`);
         }
-        const serverBlob = await response.blob();
+        
+        let serverBlob;
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          if (data.error) throw new Error(data.error);
+          if (data.url) {
+            const directRes = await fetch(data.url);
+            serverBlob = await directRes.blob();
+          } else {
+            throw new Error('Audio stream could not be reached.');
+          }
+        } else {
+          serverBlob = await response.blob();
+        }
 
         // Transcode to clean 320kbps MP3 / WAV if decoded
         try {

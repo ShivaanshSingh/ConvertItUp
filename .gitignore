@@ -1,0 +1,7 @@
+node_modules/
+temp_audio/
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
